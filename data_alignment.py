@@ -3,11 +3,12 @@ import csv
 import time
 
 class alignment():
-    def __init__(self,imu_file_name,wifi_file_name,gps_file_name):
+    def __init__(self,data_folder,imu_file_name,wifi_file_name,gps_file_name):
         # declare objs
-        self.wifi_obj = Wifi_data(wifi_file_name)
-        self.imu_obj = IMU_data(imu_file_name)
-        self.gps_obj = GPS_data(gps_file_name)
+        self.data_folder = data_folder
+        self.wifi_obj = Wifi_data(self.data_folder+wifi_file_name)
+        self.imu_obj = IMU_data(self.data_folder+imu_file_name)
+        self.gps_obj = GPS_data(self.data_folder+gps_file_name)
 
         self.data_front_threshold = 2.5
         self.data_back_threshold = 2.5      
@@ -26,34 +27,35 @@ class alignment():
         self.trajectory_counter = 0
         self.point_t_counter = 0
 
-        with open('output.csv', 'w', newline='') as csv_pnt:
+        with open(self.data_folder+'output.csv', 'w', newline='') as csv_pnt:
             csv_writer = csv.writer(csv_pnt)
             for index,single_time in enumerate(self.wifi_time):
                 wifi_content = self.wifi_obj.get_content(index)
                 if(wifi_content == -1):
                     continue
 
-                if(self.wifi_route[index] != self.last_route):
-                    if(int(self.last_route) != -1 and self.point_t_counter != 0):
+                if(int(self.wifi_route[index]) > self.last_route):
+                    if(self.last_route != -1 and self.point_t_counter != 0):
+                        self.trajectory_counter += 1
                         print("Trajectory: ",self.last_route)
                         print("point nums: ",self.point_t_counter)
                         print("Total trajectory: ",self.trajectory_counter)
                         print("Total point: ",self.point_counter)
                         print()
                         self.point_t_counter = 0
-                    self.trajectory_counter += 1
+                        
                     self.gps_content = self.gps_obj.get_content_by_route(self.wifi_route[index])
                     self.imu_content = self.imu_obj.get_content_by_route(self.wifi_route[index])
-                    self.last_route = self.wifi_route[index]
+                    self.last_route = int(self.wifi_route[index])
 
                 if(self.gps_content == None or self.imu_content==None):
                     continue
-                self.point_t_counter += 1
                 self.total_content = self.get_time_content(single_time)
 
                 if(self.total_content == None):
                     continue
 
+                self.point_t_counter += 1
                 self.point_counter += 1
                 csv_writer.writerow(wifi_content)
                 for i in self.total_content:
@@ -270,4 +272,4 @@ class GPS_data():
         except:
             return None
           
-c = alignment(imu_file_name = "imu_data.csv", gps_file_name = "gps_data.csv", wifi_file_name = "wifi_data.csv")
+c = alignment(data_folder = "../data/0822/", imu_file_name = "imu_data.csv", gps_file_name = "gps_data.csv", wifi_file_name = "wifi_data.csv")
