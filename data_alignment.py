@@ -3,15 +3,21 @@ import csv
 import time
 
 class alignment():
-    def __init__(self,data_folder,imu_file_name,wifi_file_name,gps_file_name):
+    def __init__(self,data_folder,imu_file_name,wifi_file_name,gps_file_name,indoor_gps_file_name = None, outdoor_gps_file_name = None):
         # declare objs
         self.data_folder = data_folder
+        self.indoor_gps_file_name = indoor_gps_file_name
+        self.outdoor_gps_file_name = outdoor_gps_file_name
+        if(self.indoor_gps_file_name != None):
+            self.indoor_gps_obj = GPS_data(self.data_folder+self.indoor_gps_file_name)
+        if(self.outdoor_gps_file_name != None):
+            self.outdoor_gps_obj = GPS_data(self.data_folder+self.outdoor_gps_file_name)
         self.wifi_obj = Wifi_data(self.data_folder+wifi_file_name)
         self.imu_obj = IMU_data(self.data_folder+imu_file_name)
         self.gps_obj = GPS_data(self.data_folder+gps_file_name)
 
-        self.data_front_threshold = 2.5
-        self.data_back_threshold = 2.5      
+        self.data_front_threshold = 1
+        self.data_back_threshold = 1      
 
         self.total_data = self.get_data_align()
 
@@ -44,6 +50,15 @@ class alignment():
                         print()
                         self.point_t_counter = 0
                         
+                    if(self.indoor_gps_file_name != None):
+                        self.indoor_gps_content = self.indoor_gps_obj.get_content_by_route(self.wifi_route[index])
+                        if(self.indoor_gps_content == None):
+                            continue
+                    if(self.outdoor_gps_file_name != None):
+                        self.outdoor_gps_content = self.outdoor_gps_obj.get_content_by_route(self.wifi_route[index])
+                        if(self.outdoor_gps_content == None):
+                            continue
+
                     self.gps_content = self.gps_obj.get_content_by_route(self.wifi_route[index])
                     self.imu_content = self.imu_obj.get_content_by_route(self.wifi_route[index])
                     self.last_route = int(self.wifi_route[index])
@@ -51,9 +66,6 @@ class alignment():
                 if(self.gps_content == None or self.imu_content==None):
                     continue
                 self.total_content = self.get_time_content(single_time)
-
-                if(self.total_content == None):
-                    continue
 
                 self.point_t_counter += 1
                 self.point_counter += 1
@@ -64,6 +76,7 @@ class alignment():
             
     def get_time_content(self,single_time):
         total_content = []
+        total_content.append("gps data")
         for i in self.gps_content:
             reply = self.compare_time(single_time,i[self.gps_obj.time_number])
             if reply == None:
@@ -72,8 +85,8 @@ class alignment():
                 total_content.append(i)
             else:
                 pass
-        if(len(total_content) == 0):
-            return None
+
+        total_content.append("imu data")
         for i in self.imu_content:
             reply = self.compare_time(single_time,i[self.imu_obj.time_number])
             if reply == None:
@@ -82,8 +95,29 @@ class alignment():
                 total_content.append(i)
             else:
                 pass
-        if(len(total_content) == 0):
-            return None
+
+        total_content.append("indoor gps data")
+        if(self.indoor_gps_file_name != None and self.indoor_gps_content != None):
+            for i in self.indoor_gps_content:
+                reply = self.compare_time(single_time,i[self.indoor_gps_obj.time_number])
+                if reply == None:
+                    continue
+                elif ((reply > 0 and reply <= self.data_front_threshold) or (reply <= 0 and reply >= -self.data_back_threshold)):
+                    total_content.append(i)
+                else:
+                    pass
+
+        total_content.append("outdoor gps data")
+        if(self.outdoor_gps_file_name != None and self.outdoor_gps_content != None):
+            for i in self.outdoor_gps_content:
+                reply = self.compare_time(single_time,i[self.outdoor_gps_obj.time_number])
+                if reply == None:
+                    continue
+                elif ((reply > 0 and reply <= self.data_front_threshold) or (reply <= 0 and reply >= -self.data_back_threshold)):
+                    total_content.append(i)
+                else:
+                    pass
+
         return total_content
 
     def compare_time(self,time_a,time_b):
@@ -218,23 +252,26 @@ class GPS_data():
         self.time_number = 4
 
     def read_csv(self):
-        csv_pnt = open(self.file_name,'r',newline='')
-        self.csv_reader = csv.reader(x.replace('\0', '') for x in csv_pnt)
+        try:
+            csv_pnt = open(self.file_name,'r',newline='')
+            self.csv_reader = csv.reader(x.replace('\0', '') for x in csv_pnt)
 
-        last_route = -1
-        total_content = []
-        for i in self.csv_reader:
-            try:
-                if(last_route == int(i[self.route_number])):
-                    total_content.append(i)
-                elif(last_route < int(i[self.route_number])):
-                    self.csv_content.append(total_content)
-                    last_route = int(i[self.route_number])
-                    total_content = [i]
-                else:
+            last_route = -1
+            total_content = []
+            for i in self.csv_reader:
+                try:
+                    if(last_route == int(i[self.route_number])):
+                        total_content.append(i)
+                    elif(last_route < int(i[self.route_number])):
+                        self.csv_content.append(total_content)
+                        last_route = int(i[self.route_number])
+                        total_content = [i]
+                    else:
+                        continue
+                except:
                     continue
-            except:
-                continue
+        except:
+            pass
 
     def print_csv_content(self):
         print(self.csv_content)
@@ -272,4 +309,4 @@ class GPS_data():
         except:
             return None
           
-c = alignment(data_folder = "../data/0822/", imu_file_name = "imu_data.csv", gps_file_name = "gps_data.csv", wifi_file_name = "wifi_data.csv")
+c = alignment(data_folder = "../data/0823/", imu_file_name = "imu_data.csv", gps_file_name = "gps_data.csv",indoor_gps_file_name = "indoor_gps_data.csv", outdoor_gps_file_name = "outdoor_gps_data.csv", wifi_file_name = "wifi_data.csv")
