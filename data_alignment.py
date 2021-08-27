@@ -66,76 +66,106 @@ class alignment():
 
             if(self.gps_content == None or self.imu_content==None):
                 continue
-            self.get_time_content(single_time)
+            if(self.get_time_content(single_time) == -1):
+                continue
 
             self.point_t_counter += 1
             self.point_counter += 1
+
+        self.trajectory_counter += 1
+        print("Trajectory: ",self.last_route)
+        print("point nums: ",self.point_t_counter)
+        print("Total trajectory: ",self.trajectory_counter)
+        print("Total point: ",self.point_counter)
+        print()
+        self.point_t_counter = 0
             
     def get_time_content(self,single_time):
         with open(self.data_folder+'output.csv', 'a', newline='') as csv_pnt:
             self.csv_writer = csv.writer(csv_pnt)
-            self.csv_writer.writerow(["wifi data"])
-            self.csv_writer.writerow(self.wifi_content)
-            self.csv_writer.writerow(["gps data"])
+            self.write_arr = []
+            self.write_arr.append(["wifi data"])
+            self.write_arr.append(self.wifi_content)
+            total_content = []
             for i in self.gps_content:
                 reply = self.compare_time(single_time,i[self.gps_obj.time_number])
                 if reply == None:
                     continue
                 elif ((reply > 0 and reply <= self.data_front_threshold) or (reply <= 0 and reply >= -self.data_back_threshold)):
-                    total_content = []
-                    for j in i:
-                        total_content.append(j)
-                    self.csv_writer.writerow(total_content)
+                    total_content.append(i)
                 else:
                     pass
+            if(len(total_content) != 0):
+                self.write_arr.append(["gps data"])
+                for i in total_content:
+                    self.write_arr.append(i)
+            else:
+                print(single_time)
+                return -1
 
-            self.csv_writer.writerow(["imu data"])
+            total_content = []
             for i in self.imu_content:
                 reply = self.compare_time(single_time,i[self.imu_obj.time_number])
                 if reply == None:
                     continue
                 elif ((reply > 0 and reply <= self.data_front_threshold) or (reply <= 0 and reply >= -self.data_back_threshold)):
-                    total_content = []
-                    for j in i:
-                        total_content.append(j)
-                    self.csv_writer.writerow(total_content)
+                    total_content.append(i)
                 else:
                     pass
+            if(len(total_content) != 0):
+                self.write_arr.append(["imu data"])
+                for i in total_content:
+                    self.write_arr.append(i)
+            else:
+                print(single_time)
+                return -1
 
-            self.csv_writer.writerow(["indoor gps data"])
+            total_content = []
             if(self.indoor_gps_file_name != None and self.indoor_gps_content != None):
                 for i in self.indoor_gps_content:
                     reply = self.compare_time(single_time,i[self.indoor_gps_obj.time_number])
                     if reply == None:
                         continue
                     elif ((reply > 0 and reply <= self.data_front_threshold) or (reply <= 0 and reply >= -self.data_back_threshold)):
-                        total_content = []
-                        for j in i:
-                            total_content.append(j)
-                        self.csv_writer.writerow(total_content)
+                        total_content.append(i)
                     else:
                         pass
+            if(len(total_content) != 0):
+                self.write_arr.append(["indoor gps data"])
+                for i in total_content:
+                    self.write_arr.append(i)
+            else:
+                print(single_time)
+                return -1
 
-            self.csv_writer.writerow(["outdoor gps data"])
+            total_content = []
             if(self.outdoor_gps_file_name != None and self.outdoor_gps_content != None):
                 for i in self.outdoor_gps_content:
                     reply = self.compare_time(single_time,i[self.outdoor_gps_obj.time_number])
                     if reply == None:
                         continue
                     elif ((reply > 0 and reply <= self.data_front_threshold) or (reply <= 0 and reply >= -self.data_back_threshold)):
-                        total_content = []
-                        for j in i:
-                            total_content.append(j)
-                        self.csv_writer.writerow(total_content)
+                        total_content.append(i)
                     else:
                         pass
+            if(len(total_content) != 0):
+                self.write_arr.append(["outdoor gps data"])
+                for i in total_content:
+                    self.write_arr.append(i)
+            else:
+                print(single_time)
+                return -1
+            self.write_arr.append(["finish"])
 
-            self.csv_writer.writerow(["finish"])
+            for i in self.write_arr:
+                self.csv_writer.writerow(i)
+
+            return 0
 
     def compare_time(self,time_a,time_b):
         try:
-            time_a_struct = time.strptime(time_a,"%Y-%m-%d, %H:%M:%S")
-            time_b_struct = time.strptime(time_b,"%Y-%m-%d, %H:%M:%S")
+            time_a_struct = time.strptime(time_a,"%Y-%m-%d, %H:%M:%S.%f")
+            time_b_struct = time.strptime(time_b,"%Y-%m-%d, %H:%M:%S.%f")
 
             time_a = int(time.mktime(time_a_struct))
             time_b = int(time.mktime(time_b_struct))
@@ -321,4 +351,4 @@ class GPS_data():
         except:
             return None
           
-c = alignment(data_folder = "../data/0823/", imu_file_name = "imu_data.csv", gps_file_name = "gps_data.csv",indoor_gps_file_name = "indoor_gps_data.csv", outdoor_gps_file_name = "outdoor_gps_data.csv", wifi_file_name = "wifi_data.csv")
+c = alignment(data_folder = "../data/0827/", imu_file_name = "imu_data.csv", gps_file_name = "gps_data.csv",indoor_gps_file_name = "indoor_gps_data.csv", outdoor_gps_file_name = "outdoor_gps_data.csv", wifi_file_name = "wifi_data.csv")

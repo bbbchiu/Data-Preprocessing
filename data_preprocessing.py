@@ -171,4 +171,4 @@ class preprocessing():
                 self.csv_writer.writerow(i)
 
           
-c = preprocessing(data_folder = "../data/0823/",input_file_name = "output.csv")
+c = preprocessing(data_folder = "../data/0827/",input_file_name = "output.csv")
