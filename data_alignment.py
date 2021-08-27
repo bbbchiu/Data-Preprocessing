@@ -1,6 +1,7 @@
 import numpy as np
 import csv
 import time
+from datetime import datetime
 
 class alignment():
     def __init__(self,data_folder,imu_file_name,wifi_file_name,gps_file_name,indoor_gps_file_name = None, outdoor_gps_file_name = None):
@@ -17,7 +18,7 @@ class alignment():
         self.gps_obj = GPS_data(self.data_folder+gps_file_name)
 
         self.data_front_threshold = 1
-        self.data_back_threshold = 1      
+        self.data_back_threshold = 1
 
         self.total_data = self.get_data_align()
 
@@ -49,6 +50,7 @@ class alignment():
                     print("Total trajectory: ",self.trajectory_counter)
                     print("Total point: ",self.point_counter)
                     print()
+
                     self.point_t_counter = 0
                     
                 if(self.indoor_gps_file_name != None):
@@ -100,7 +102,7 @@ class alignment():
                 for i in total_content:
                     self.write_arr.append(i)
             else:
-                print(single_time)
+                #print("gps: ",single_time)
                 return -1
 
             total_content = []
@@ -117,7 +119,7 @@ class alignment():
                 for i in total_content:
                     self.write_arr.append(i)
             else:
-                print(single_time)
+                #print("imu: ",single_time)
                 return -1
 
             total_content = []
@@ -135,7 +137,7 @@ class alignment():
                 for i in total_content:
                     self.write_arr.append(i)
             else:
-                print(single_time)
+                #print("indoor gps: ",single_time)
                 return -1
 
             total_content = []
@@ -153,7 +155,7 @@ class alignment():
                 for i in total_content:
                     self.write_arr.append(i)
             else:
-                print(single_time)
+                #print("outdoor gps: ",single_time)
                 return -1
             self.write_arr.append(["finish"])
 
@@ -162,19 +164,14 @@ class alignment():
 
             return 0
 
-    def compare_time(self,time_a,time_b):
-        try:
-            time_a_struct = time.strptime(time_a,"%Y-%m-%d, %H:%M:%S.%f")
-            time_b_struct = time.strptime(time_b,"%Y-%m-%d, %H:%M:%S.%f")
+    def compare_time(self,time_a,time_b):        
+        time_a_struct = datetime.strptime(time_a,"%Y-%m-%d, %H:%M:%S.%f")
+        time_b_struct = datetime.strptime(time_b,"%Y-%m-%d, %H:%M:%S.%f")
 
-            time_a = int(time.mktime(time_a_struct))
-            time_b = int(time.mktime(time_b_struct))
+        time_a = int(time.mktime(time_a_struct.timetuple())*1000 + time_a_struct.microsecond/1000.0)/1000.0
+        time_b = int(time.mktime(time_b_struct.timetuple())*1000 + time_b_struct.microsecond/1000.0)/1000.0
 
-            return time_a - time_b
-
-        except:
-            return None
-
+        return time_a - time_b
 
 class Wifi_data():
     def __init__(self,file_name):
@@ -269,17 +266,13 @@ class IMU_data():
                     return i
 
     def compare_time(self,time_a,time_b):
-        try:
-            time_a_struct = time.strptime(time_a,"%Y-%m-%d, %H:%M:%S")
-            time_b_struct = time.strptime(time_b,"%Y-%m-%d, %H:%M:%S")
+        time_a_struct = datetime.strptime(time_a,"%Y-%m-%d, %H:%M:%S.%f")
+        time_b_struct = datetime.strptime(time_b,"%Y-%m-%d, %H:%M:%S.%f")
 
-            time_a = int(time.mktime(time_a_struct))
-            time_b = int(time.mktime(time_b_struct))
+        time_a = int(time.mktime(time_a_struct.timetuple())*1000 + time_a_struct.microsecond/1000.0)
+        time_b = int(time.mktime(time_b_struct.timetuple())*1000 + time_b_struct.microsecond/1000.0)
 
-            return time_a - time_b
-
-        except:
-            return None
+        return time_a - time_b
 
 class GPS_data():
     def __init__(self,file_name):
@@ -339,16 +332,12 @@ class GPS_data():
                     return i
 
     def compare_time(self,time_a,time_b):
-        try:
-            time_a_struct = time.strptime(time_a,"%Y-%m-%d, %H:%M:%S")
-            time_b_struct = time.strptime(time_b,"%Y-%m-%d, %H:%M:%S")
+        time_a_struct = datetime.strptime(time_a,"%Y-%m-%d, %H:%M:%S.%f")
+        time_b_struct = datetime.strptime(time_b,"%Y-%m-%d, %H:%M:%S.%f")
 
-            time_a = int(time.mktime(time_a_struct))
-            time_b = int(time.mktime(time_b_struct))
+        time_a = int(time.mktime(time_a_struct.timetuple())*1000 + time_a_struct.microsecond/1000.0)
+        time_b = int(time.mktime(time_b_struct.timetuple())*1000 + time_b_struct.microsecond/1000.0)
 
-            return time_a - time_b
-
-        except:
-            return None
+        return time_a - time_b
           
 c = alignment(data_folder = "../data/0827/", imu_file_name = "imu_data.csv", gps_file_name = "gps_data.csv",indoor_gps_file_name = "indoor_gps_data.csv", outdoor_gps_file_name = "outdoor_gps_data.csv", wifi_file_name = "wifi_data.csv")
