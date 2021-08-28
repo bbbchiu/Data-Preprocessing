@@ -12,9 +12,13 @@ class preprocessing():
         self.csv_content = []
         self.read_csv()
 
+        self.cnt_route = 0
         self.cut_trajectory()
         self.data_combine()
         self.write_output_file()
+
+        print("cnt_route: ",self.cnt_route)
+        
 
     def read_csv(self):
         csv_pnt = open(self.file_name,'r',newline='')
@@ -52,6 +56,7 @@ class preprocessing():
                 continue
 
             if(int(i[0]) != last_route):
+                print(last_route)
                 if(last_route == -1):
                     last_route = int(i[0])
                 elif(int(i[0]) == -1):
@@ -147,6 +152,7 @@ class preprocessing():
                     route_num = int(i[0])
                     last_route = int(i[0])
                     step_num = 1
+                    self.cnt_route += 1
             
             if(wifi_flag):
                 wifi_final_data = i[3]
@@ -171,4 +177,4 @@ class preprocessing():
                 self.csv_writer.writerow(i)
 
           
-c = preprocessing(data_folder = "../data/0827/",input_file_name = "output.csv")
+c = preprocessing(data_folder = "../data/0828/",input_file_name = "output.csv")

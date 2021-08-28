@@ -5,17 +5,29 @@ from datetime import datetime
 
 class alignment():
     def __init__(self,data_folder,imu_file_name,wifi_file_name,gps_file_name,indoor_gps_file_name = None, outdoor_gps_file_name = None):
-        # declare objs
+        # declare objs and set files
         self.data_folder = data_folder
+        self.imu_file_name = imu_file_name
+        self.wifi_file_name = wifi_file_name
+        self.gps_file_name = gps_file_name
         self.indoor_gps_file_name = indoor_gps_file_name
         self.outdoor_gps_file_name = outdoor_gps_file_name
+
         if(self.indoor_gps_file_name != None):
             self.indoor_gps_obj = GPS_data(self.data_folder+self.indoor_gps_file_name)
         if(self.outdoor_gps_file_name != None):
             self.outdoor_gps_obj = GPS_data(self.data_folder+self.outdoor_gps_file_name)
-        self.wifi_obj = Wifi_data(self.data_folder+wifi_file_name)
-        self.imu_obj = IMU_data(self.data_folder+imu_file_name)
-        self.gps_obj = GPS_data(self.data_folder+gps_file_name)
+
+        self.wifi_obj = Wifi_data(self.data_folder+self.wifi_file_name)
+        self.imu_obj = IMU_data(self.data_folder+self.imu_file_name)
+        self.gps_obj = GPS_data(self.data_folder+self.gps_file_name)
+
+        # print("data folder: ",self.data_folder)
+        # print("imu file: ",self.imu_file_name)
+        # print("wifi file: ",self.wifi_file_name)
+        # print("gps file: ",self.gps_file_name)
+        # print("indoor gps file: ",self.indoor_gps_file_name)
+        # print("outdoor gps file: ",self.outdoor_gps_file_name)
 
         self.data_front_threshold = 1
         self.data_back_threshold = 1
@@ -25,9 +37,12 @@ class alignment():
     def get_data_align(self):
         # get wifi array
         self.wifi_time = self.wifi_obj.get_time_arr()
+        #print(self.wifi_time)
+        
         # get route array
         self.wifi_route = self.wifi_obj.get_route_arr()
-
+        #print(self.wifi_route)
+   
         # align sensors
         self.last_route = -1
         self.point_counter = 0
@@ -39,6 +54,8 @@ class alignment():
 
         for index,single_time in enumerate(self.wifi_time):
             self.wifi_content = self.wifi_obj.get_content(index)
+            #print(self.wifi_content)
+            
             if(self.wifi_content == -1):
                 continue
 
@@ -51,20 +68,25 @@ class alignment():
                     print("Total point: ",self.point_counter)
                     print()
 
-                    self.point_t_counter = 0
+                    self.point_t_counter = 1
                     
-                if(self.indoor_gps_file_name != None):
-                    self.indoor_gps_content = self.indoor_gps_obj.get_content_by_route(self.wifi_route[index])
-                    if(self.indoor_gps_content == None):
-                        continue
-                if(self.outdoor_gps_file_name != None):
-                    self.outdoor_gps_content = self.outdoor_gps_obj.get_content_by_route(self.wifi_route[index])
-                    if(self.outdoor_gps_content == None):
-                        continue
+            if(self.indoor_gps_file_name != None):
+                self.indoor_gps_content = self.indoor_gps_obj.get_content_by_route(int(self.wifi_route[index]))
+                if(self.indoor_gps_content == None):
+                    continue
+            else:
+                self.indoor_gps_content = None
 
-                self.gps_content = self.gps_obj.get_content_by_route(self.wifi_route[index])
-                self.imu_content = self.imu_obj.get_content_by_route(self.wifi_route[index])
-                self.last_route = int(self.wifi_route[index])
+            if(self.outdoor_gps_file_name != None):
+                self.outdoor_gps_content = self.outdoor_gps_obj.get_content_by_route(int(self.wifi_route[index]))
+                if(self.outdoor_gps_content == None):
+                    continue
+            else:
+                self.outdoor_gps_content = None
+
+            self.gps_content = self.gps_obj.get_content_by_route(self.wifi_route[index])
+            self.imu_content = self.imu_obj.get_content_by_route(self.wifi_route[index])
+            self.last_route = int(self.wifi_route[index])
 
             if(self.gps_content == None or self.imu_content==None):
                 continue
@@ -123,6 +145,7 @@ class alignment():
                 return -1
 
             total_content = []
+            #print(self.indoor_gps_file_name,self.indoor_gps_content)
             if(self.indoor_gps_file_name != None and self.indoor_gps_content != None):
                 for i in self.indoor_gps_content:
                     reply = self.compare_time(single_time,i[self.indoor_gps_obj.time_number])
@@ -132,15 +155,16 @@ class alignment():
                         total_content.append(i)
                     else:
                         pass
-            if(len(total_content) != 0):
-                self.write_arr.append(["indoor gps data"])
-                for i in total_content:
-                    self.write_arr.append(i)
-            else:
-                #print("indoor gps: ",single_time)
-                return -1
+                if(len(total_content) != 0):
+                    self.write_arr.append(["indoor gps data"])
+                    for i in total_content:
+                        self.write_arr.append(i)
+                else:
+                    #print("indoor gps: ",single_time)
+                    return -1
 
             total_content = []
+            #print(self.outdoor_gps_file_name,self,outdoor_gps_content)
             if(self.outdoor_gps_file_name != None and self.outdoor_gps_content != None):
                 for i in self.outdoor_gps_content:
                     reply = self.compare_time(single_time,i[self.outdoor_gps_obj.time_number])
@@ -150,13 +174,13 @@ class alignment():
                         total_content.append(i)
                     else:
                         pass
-            if(len(total_content) != 0):
-                self.write_arr.append(["outdoor gps data"])
-                for i in total_content:
-                    self.write_arr.append(i)
-            else:
-                #print("outdoor gps: ",single_time)
-                return -1
+                if(len(total_content) != 0):
+                    self.write_arr.append(["outdoor gps data"])
+                    for i in total_content:
+                        self.write_arr.append(i)
+                else:
+                    #print("outdoor gps: ",single_time)
+                    return -1
             self.write_arr.append(["finish"])
 
             for i in self.write_arr:
@@ -340,4 +364,4 @@ class GPS_data():
 
         return time_a - time_b
           
-c = alignment(data_folder = "../data/0827/", imu_file_name = "imu_data.csv", gps_file_name = "gps_data.csv",indoor_gps_file_name = "indoor_gps_data.csv", outdoor_gps_file_name = "outdoor_gps_data.csv", wifi_file_name = "wifi_data.csv")
+c = alignment(data_folder = "../data/0828/", imu_file_name = "imu_data.csv", gps_file_name = "gps_data.csv", wifi_file_name = "wifi_data.csv")
