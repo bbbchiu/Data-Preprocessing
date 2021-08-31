@@ -29,8 +29,8 @@ class alignment():
         # print("indoor gps file: ",self.indoor_gps_file_name)
         # print("outdoor gps file: ",self.outdoor_gps_file_name)
 
-        self.data_front_threshold = 1
-        self.data_back_threshold = 1
+        self.data_front_threshold = 0.5
+        self.data_back_threshold = 0.5
 
         self.total_data = self.get_data_align()
 
@@ -364,4 +364,4 @@ class GPS_data():
 
         return time_a - time_b
           
-c = alignment(data_folder = "../data/0828/", imu_file_name = "imu_data.csv", gps_file_name = "gps_data.csv", wifi_file_name = "wifi_data.csv")
+c = alignment(data_folder = "../data/0830/", imu_file_name = "imu_data.csv", gps_file_name = "gps_data.csv", wifi_file_name = "wifi_data.csv")

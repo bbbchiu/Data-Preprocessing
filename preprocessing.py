@@ -13,11 +13,13 @@ class preprocessing():
         self.read_csv()
 
         self.cnt_route = 0
+        self.cnt_pnt = 0
         self.cut_trajectory()
         self.data_combine()
         self.write_output_file()
 
         print("cnt_route: ",self.cnt_route)
+        print("cnt_pnt: ",self.cnt_pnt)
         
 
     def read_csv(self):
@@ -80,9 +82,12 @@ class preprocessing():
         route_num = -1
         step_num = 1
         last_route = -1
+        cnt_mag = 0
+        x = 0
+        y = 0
         wifi_final_data = -1
         gps_final_data = []
-        imu_final_data = -1
+        imu_final_data = [0,0,0]
         indoor_gps_final_data = []
         outdoor_gps_final_data = []
         self.output_arr = []
@@ -93,7 +98,7 @@ class preprocessing():
         indoor_gps_flag = False
         outdoor_gps_flag = False
 
-        self.output_arr.append(["route num","step num","wifi data","gps data","imu data","indoor gps data","outdoor gps data"])
+        self.output_arr.append(["route num","step num","x","y","wifi data","gps data","imu data","indoor gps data","outdoor gps data"])
         for i in self.csv_content:
             if(i[0] == "wifi data"):
                 wifi_flag = True
@@ -131,12 +136,18 @@ class preprocessing():
                 outdoor_gps_flag = True
                 continue
             elif(i[0] == "finish"):
-                self.output_arr.append([route_num,step_num,wifi_final_data,gps_final_data,imu_final_data,indoor_gps_final_data,outdoor_gps_final_data])
+                self.cnt_pnt += 1
+                for index,i in enumerate(imu_final_data):
+                    imu_final_data[index] /= cnt_mag
+                self.output_arr.append([route_num,step_num,x,y,wifi_final_data,gps_final_data,imu_final_data,indoor_gps_final_data,outdoor_gps_final_data])
+                cnt_mag = 0
                 wifi_final_data = -1
                 gps_final_data = []
-                imu_final_data = -1
+                imu_final_data = [0,0,0]
                 indoor_gps_final_data = []
                 outdoor_gps_final_data = []
+                x = 0
+                y = 0
                 step_num += 1
                 continue
             else:
@@ -156,12 +167,17 @@ class preprocessing():
             
             if(wifi_flag):
                 wifi_final_data = i[3]
+                x = float(i[1])
+                y = float(i[2])
                 #print(wifi_final_data)
             if(gps_flag):
                 gps_final_data.append(i[3])
                 #print(gps_final_data)
             if(imu_flag):
-                imu_final_data = -1
+                imu_final_data[0] += float(i[9])
+                imu_final_data[1] += float(i[10])
+                imu_final_data[2] += float(i[11])
+                cnt_mag += 1
                 #print(imu_final_data)
             if(indoor_gps_flag):
                 indoor_gps_final_data.append(i[3])
