@@ -61,4 +61,4 @@ class count_pnt():
         print("cnt_route: ",cnt_route)
         print("cnt_step: ",cnt_step)
     
-c = count_pnt(data_folder = "../data/0828/",input_file_name = "output2.csv")
+c = count_pnt(data_folder = "../data/0902/",input_file_name = "output2.csv")

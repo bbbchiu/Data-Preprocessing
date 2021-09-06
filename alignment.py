@@ -211,10 +211,17 @@ class Wifi_data():
         self.time_number = 4
 
     def read_csv(self):
-        csv_pnt = open(self.file_name,'r',newline='')
+        csv_pnt = open(self.file_name,'r',newline='', encoding='utf-8')
         csv_reader = csv.reader(csv_pnt)
 
-        self.csv_content = [i for i in csv_reader]
+        #self.csv_content = [i for i in csv_reader]
+        self.csv_content = []
+        try:
+            for index,i in enumerate(csv_reader):
+                self.csv_content.append(i)
+        except:
+            print(index)
+            print(i)
 
     def print_csv_content(self):
         print(self.csv_content)
@@ -364,4 +371,4 @@ class GPS_data():
 
         return time_a - time_b
           
-c = alignment(data_folder = "../data/0830/", imu_file_name = "imu_data.csv", gps_file_name = "gps_data.csv", wifi_file_name = "wifi_data.csv")
+c = alignment(data_folder = "../data/0902/", imu_file_name = "imu_data.csv", gps_file_name = "gps_data.csv", wifi_file_name = "wifi_data.csv")

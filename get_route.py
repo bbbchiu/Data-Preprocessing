@@ -10,6 +10,8 @@ class route_generator():
         self.indoor_height = indoor_height
         self.outdoor_height = outdoor_height
         self.route_setting()
+        self.ud_num = 0
+        self.lr_num = 0
 
     def route_setting(self):
         self.route_min_step = 10
@@ -29,17 +31,17 @@ class route_generator():
         x = random.randint(0,self.total_height-1)
         y = random.randint(0,self.width-1)
         z = random.randint(0,3)
-        if(z == 0):
-            x = 0
-        elif(z==1):
-            x = self.total_height-1
-        elif(z==2):
-            y = 0
-        else:
-            y = self.width -1
+        # if(z == 0):
+        #     x = 0
+        # elif(z==1):
+        #     x = self.total_height-1
+        # elif(z==2):
+        #     y = 0
+        # else:
+        #     y = self.width -1
         return [x,y]
 
-    def gen_route(self):
+    def gen_route(self,dir_flag = -1):
         # generate start point and end point
         self.start_pnt = [0,0]
         self.end_pnt = [0,0]
@@ -59,20 +61,27 @@ class route_generator():
 #        print()
 
         route_step = []
-        rand_dir = random.randint(0,1)
+
+        if(dir_flag == -1):
+            rand_dir = random.randint(0,1)
+        else:
+            rand_dir = dir_flag
 #        print("rand_dir: ",rand_dir)
 #        print()
 
+        temp = ""
         temp_step_arr = []
         step_arr = [self.start_pnt]
         if(self.start_pnt[rand_dir] > self.end_pnt[rand_dir]):
             for i in range(self.end_pnt[rand_dir],self.start_pnt[rand_dir]+1):
                 if(rand_dir == 0):
+                    temp = "ud"
                     # if(i==self.warning_indoor_x or i == self.warning_outdoor_x):
                     #     continue
                     # else:
                     temp_step_arr.append([i,random.randint(0,self.width-1)])
                 else:
+                    temp = "lr"
                     # x = self.warning_x
                     # while(x==self.warning_x):
                     x = random.randint(0,self.total_height-1)
@@ -81,11 +90,13 @@ class route_generator():
         else:
             for i in range(self.start_pnt[rand_dir],self.end_pnt[rand_dir]+1):
                 if(rand_dir == 0):
+                    temp = "ud"
                     # if(i==self.warning_indoor_x or i == self.warning_outdoor_x):
                     #     continue
                     # else:
                     temp_step_arr.append([i,random.randint(0,self.width-1)])
                 else:
+                    temp = "lr"
                 #     x = self.warning_x
                 #     while(x==self.warning_x):
                     x = random.randint(0,self.total_height-1)
@@ -102,62 +113,79 @@ class route_generator():
                # print("hit")
                 step_arr.remove(i)
 
-        #return step_arr
+        last_pnt = step_arr[0]
+        cnt_dis = 0
+        for i in step_arr:
+            if(i == step_arr[0]):
+                continue
+            cnt_dis += self.get_pnt_distance(last_pnt,i)
+            last_pnt = i
+
+        if(cnt_dis < 7):
+            return -1
+        else:
+            if(temp == "ud"):
+                self.ud_num += 1
+            elif(temp == "lr"):
+                self.lr_num += 1
+            else:
+                pass
+            return step_arr
 #        print("temp step arr: ",temp_step_arr)
         #print("step arr: ",step_arr)
 #        print()
 
-        rand_dir = random.randint(0,1)
-  #      print("rand_dir: ",rand_dir)
-  #      print()
+#         rand_dir = random.randint(0,1)
+#   #      print("rand_dir: ",rand_dir)
+#   #      print()
 
-        route_arr = [step_arr[0]]
-        current_step = step_arr[0]
+#         route_arr = [step_arr[0]]
+#         current_step = step_arr[0]
 
-        dis_cnt = 0
-        last_pnt = -1
-        for i in step_arr:
-            if(last_pnt == -1):
-                last_pnt = i
-                continue
-            dis_cnt += self.get_pnt_distance(i,last_pnt)
-            last_pnt = i
-        #print("dis_cnt: ",dis_cnt)
+#         dis_cnt = 0
+#         last_pnt = -1
+#         for i in step_arr:
+#             if(last_pnt == -1):
+#                 last_pnt = i
+#                 continue
+#             dis_cnt += self.get_pnt_distance(i,last_pnt)
+#             last_pnt = i
+#         #print("dis_cnt: ",dis_cnt)
 
-        if(rand_dir): # 1 -> left/right
-            for i in step_arr[1:]:
-                while(current_step[0]!=i[0]):
-                    if(current_step[0] > i[0]):
-                        current_step = [current_step[0]-1,current_step[1]]
-                    else:
-                        current_step = [current_step[0]+1,current_step[1]]
-                    route_arr.append(current_step)
-                while(current_step[1]!=i[1]):
-                    if(current_step[1] > i[1]):
-                        current_step = [current_step[0],current_step[1]-1]
-                    else:
-                        current_step = [current_step[0],current_step[1]+1]
-                    route_arr.append(current_step)
-        else: # 0 -> up/down
-            for i in step_arr[1:]:
-                while(current_step[1]!=i[1]):
-                    if(current_step[1] > i[1]):
-                        current_step = [current_step[0],current_step[1]-1]
-                    else:
-                        current_step = [current_step[0],current_step[1]+1]
-                    route_arr.append(current_step)
-                while(current_step[0]!=i[0]):
-                    if(current_step[0] > i[0]):
-                        current_step = [current_step[0]-1,current_step[1]]
-                    else:
-                        current_step = [current_step[0]+1,current_step[1]]
-                    route_arr.append(current_step)
+#         if(rand_dir): # 1 -> left/right
+#             for i in step_arr[1:]:
+#                 while(current_step[0]!=i[0]):
+#                     if(current_step[0] > i[0]):
+#                         current_step = [current_step[0]-1,current_step[1]]
+#                     else:
+#                         current_step = [current_step[0]+1,current_step[1]]
+#                     route_arr.append(current_step)
+#                 while(current_step[1]!=i[1]):
+#                     if(current_step[1] > i[1]):
+#                         current_step = [current_step[0],current_step[1]-1]
+#                     else:
+#                         current_step = [current_step[0],current_step[1]+1]
+#                     route_arr.append(current_step)
+#         else: # 0 -> up/down
+#             for i in step_arr[1:]:
+#                 while(current_step[1]!=i[1]):
+#                     if(current_step[1] > i[1]):
+#                         current_step = [current_step[0],current_step[1]-1]
+#                     else:
+#                         current_step = [current_step[0],current_step[1]+1]
+#                     route_arr.append(current_step)
+#                 while(current_step[0]!=i[0]):
+#                     if(current_step[0] > i[0]):
+#                         current_step = [current_step[0]-1,current_step[1]]
+#                     else:
+#                         current_step = [current_step[0]+1,current_step[1]]
+#                     route_arr.append(current_step)
 
-        for i in route_arr:
-            if((i[0]==4 and i[1] ==1) or ((i[0]==4 and i[1] ==2))):
-               # print("hit")
-                route_arr.remove(i)
-        return route_arr
+#         for i in route_arr:
+#             if((i[0]==4 and i[1] ==1) or ((i[0]==4 and i[1] ==2))):
+#                # print("hit")
+#                 route_arr.remove(i)
+#         return route_arr
 
     def inBoundary(self,pnt):
         if(pnt[0] < self.total_height and pnt[0]>=0 and pnt[1]>=0 and pnt[1]< self.width):
@@ -183,11 +211,39 @@ if __name__ == "__main__":
     cnt_route = 0
     route_arr = []
 
+    while(np.min(position_arr) < pnt_num/2):
+        # print(position_arr)
+        # print()
+        # time.sleep(0.5)
+        route = r.gen_route()
+        if(route == -1):
+            continue
+        for i in route:
+            if((i[0]==4 and i[1]==1) or (i[0]==4 and i[1]==2)):
+                try:
+                    route.index([4,1])
+                    break
+                except ValueError:
+                    pass
+
+                try:
+                    route.index([4,2])
+                    break
+                except ValueError:
+                    pass
+                
+            position_arr[i[1]][i[0]] += 1
+        #break
+        route_arr.append(route)
+        cnt_route += 1
+
     while(np.min(position_arr) < pnt_num):
         # print(position_arr)
         # print()
         # time.sleep(0.5)
         route = r.gen_route()
+        if(route == -1):
+            continue
         for i in route:
             if((i[0]==4 and i[1]==1) or (i[0]==4 and i[1]==2)):
                 try:
@@ -212,8 +268,10 @@ if __name__ == "__main__":
         for index,i in enumerate(route_arr):
             temp = []
             for j in i:
-                temp.append([j[0],j[1]])
+                temp.append(str(j[0])+","+str(j[1]))
             csv_writer.writerow(temp)
 
     print("cnt_route: ",cnt_route)
+    print("lr: ",r.lr_num)
+    print("ud: ",r.ud_num)
     print(position_arr)
