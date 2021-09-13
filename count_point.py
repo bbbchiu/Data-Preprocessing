@@ -41,13 +41,14 @@ class count_pnt():
         y = -1
 
         for i in self.csv_content:
+            #print(i)
             if(i[0] == "route num"):
                 continue
             if(route_num != i[0]):
                 route_num = i[0]
                 cnt_route += 1
 
-            if(i[4]=="-1" or i[5]=="-1" or i[6]=="-1"):
+            if(len(i) >=4 and (i[4]=="-1" or i[5]=="-1" or i[6]=="-1")):
                 continue
 
             x = i[2]
@@ -61,4 +62,4 @@ class count_pnt():
         print("cnt_route: ",cnt_route)
         print("cnt_step: ",cnt_step)
     
-c = count_pnt(data_folder = "../data/0902/",input_file_name = "output2.csv")
+c = count_pnt(data_folder = "../data/0913/",input_file_name = "output2.csv")

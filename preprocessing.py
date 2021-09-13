@@ -18,8 +18,8 @@ class preprocessing():
         self.data_combine()
         self.write_output_file()
 
-        print("cnt_route: ",self.cnt_route)
-        print("cnt_pnt: ",self.cnt_pnt)
+        #print("cnt_route: ",self.cnt_route)
+        #print("cnt_pnt: ",self.cnt_pnt)
         
 
     def read_csv(self):
@@ -40,12 +40,29 @@ class preprocessing():
         self.cutting_threshold = 7
         last_route = -1
         pnt_a_route = 0
+        wifi_flag = False
+        imu_flag = False
+        gps_flag = False
 
         for i in self.csv_content:
             specific_flag = False
             for j in self.specific_keyword:
                 if(i[0] == j):
                     specific_flag = True
+                    if(j == "wifi data"):
+                      wifi_flag = True
+                      imu_flag = False
+                      gps_flag = False
+                    elif(j == "imu data"):
+                      wifi_flag = False
+                      imu_flag = True
+                      gps_flag = False
+                    elif(j == "gps data"):
+                      wifi_flag = False
+                      imu_flag = False
+                      gps_flag = True
+                    else:
+                      pass
                 if(specific_flag):
                     break
             if(specific_flag):
@@ -57,25 +74,30 @@ class preprocessing():
                 temp_arr.append(i)
                 continue
 
-            if(int(i[0]) != last_route):
-                print(last_route)
-                if(last_route == -1):
-                    last_route = int(i[0])
-                elif(int(i[0]) == -1):
-                    pass
-                else:
-                    #[print(i) for i in temp_arr]
-                    self.cnt_route_pnt_arr.append([last_route,pnt_a_route])
-                    if(pnt_a_route < self.cutting_threshold):
-                        self.cut_route_arr.append(last_route)
-                    else:
-                        out_arr += temp_arr
-                    temp_arr = []
-                    pnt_a_route = 0
-                    last_route = int(i[0])
-            temp_arr.append(i)
+            if(wifi_flag or imu_flag):
+              if(int(i[0]) != last_route):
+                  #print(last_route)
+                  if(last_route == -1):
+                      last_route = int(i[0])
+                  elif(int(i[0]) == -1):
+                      pass
+                  else:
+                      #[print(i) for i in temp_arr]
+                      self.cnt_route_pnt_arr.append([last_route,pnt_a_route])
+                      if(pnt_a_route < self.cutting_threshold):
+                          self.cut_route_arr.append(last_route)
+                      else:
+                          out_arr += temp_arr
+                      temp_arr = []
+                      pnt_a_route = 0
+                      last_route = int(i[0])
+              temp_arr.append(i)
+            elif(gps_flag):
+              temp_arr.append(i)
+            else:
+              pass
 
-        print(self.cnt_route_pnt_arr)
+        #print(self.cnt_route_pnt_arr)
         self.csv_content = out_arr
 
     def data_combine(self):
@@ -153,17 +175,18 @@ class preprocessing():
             else:
                 pass
 
-            if(int(i[0]) != last_route):
-                if(int(i[0]) == -1):
-                    pass
-                elif(last_route == -1):
-                    last_route = int(i[0])
-                    route_num = int(i[0])
-                else:
-                    route_num = int(i[0])
-                    last_route = int(i[0])
-                    step_num = 1
-                    self.cnt_route += 1
+            if(wifi_flag or imu_flag):
+              if(int(i[0]) != last_route):
+                  if(int(i[0]) == -1):
+                      pass
+                  elif(last_route == -1):
+                      last_route = int(i[0])
+                      route_num = int(i[0])
+                  else:
+                      route_num = int(i[0])
+                      last_route = int(i[0])
+                      step_num = 1
+                      self.cnt_route += 1
             
             if(wifi_flag):
                 wifi_final_data = i[3]
@@ -171,7 +194,7 @@ class preprocessing():
                 y = float(i[2])
                 #print(wifi_final_data)
             if(gps_flag):
-                gps_final_data.append(i[3])
+                gps_final_data.append(i[1])
                 #print(gps_final_data)
             if(imu_flag):
                 imu_final_data[0] += float(i[9])
@@ -192,5 +215,4 @@ class preprocessing():
             for i in self.output_arr:
                 self.csv_writer.writerow(i)
 
-          
-c = preprocessing(data_folder = "../data/0828/",input_file_name = "output.csv")
+        

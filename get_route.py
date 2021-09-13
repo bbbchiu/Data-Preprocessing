@@ -31,14 +31,14 @@ class route_generator():
         x = random.randint(0,self.total_height-1)
         y = random.randint(0,self.width-1)
         z = random.randint(0,3)
-        # if(z == 0):
-        #     x = 0
-        # elif(z==1):
-        #     x = self.total_height-1
-        # elif(z==2):
-        #     y = 0
-        # else:
-        #     y = self.width -1
+        if(z == 0):
+            x = 0
+        elif(z==1):
+            x = self.total_height-1
+        elif(z==2):
+            y = 0
+        else:
+            y = self.width -1
         return [x,y]
 
     def gen_route(self,dir_flag = -1):

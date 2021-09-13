@@ -62,11 +62,11 @@ class alignment():
             if(int(self.wifi_route[index]) > self.last_route):
                 if(self.last_route != -1 and self.point_t_counter != 0):
                     self.trajectory_counter += 1
-                    print("Trajectory: ",self.last_route)
-                    print("point nums: ",self.point_t_counter)
-                    print("Total trajectory: ",self.trajectory_counter)
-                    print("Total point: ",self.point_counter)
-                    print()
+                    #print("Trajectory: ",self.last_route)
+                    #print("point nums: ",self.point_t_counter)
+                    #print("Total trajectory: ",self.trajectory_counter)
+                    #print("Total point: ",self.point_counter)
+                    #print()
 
                     self.point_t_counter = 1
                     
@@ -84,7 +84,7 @@ class alignment():
             else:
                 self.outdoor_gps_content = None
 
-            self.gps_content = self.gps_obj.get_content_by_route(self.wifi_route[index])
+            self.gps_content = self.gps_obj.get_all_content()
             self.imu_content = self.imu_obj.get_content_by_route(self.wifi_route[index])
             self.last_route = int(self.wifi_route[index])
 
@@ -97,11 +97,11 @@ class alignment():
             self.point_counter += 1
 
         self.trajectory_counter += 1
-        print("Trajectory: ",self.last_route)
-        print("point nums: ",self.point_t_counter)
-        print("Total trajectory: ",self.trajectory_counter)
-        print("Total point: ",self.point_counter)
-        print()
+        #print("Trajectory: ",self.last_route)
+        #print("point nums: ",self.point_t_counter)
+        #print("Total trajectory: ",self.trajectory_counter)
+        #print("Total point: ",self.point_counter)
+        #print()
         self.point_t_counter = 0
             
     def get_time_content(self,single_time):
@@ -220,8 +220,9 @@ class Wifi_data():
             for index,i in enumerate(csv_reader):
                 self.csv_content.append(i)
         except:
-            print(index)
-            print(i)
+            pass
+            #print(index)
+            #print(i)
 
     def print_csv_content(self):
         print(self.csv_content)
@@ -315,27 +316,14 @@ class GPS_data():
     def parameter_declare(self):
         self.csv_content = []
         self.route_number = 0
-        self.time_number = 4
+        self.time_number = 0
 
     def read_csv(self):
         try:
             csv_pnt = open(self.file_name,'r',newline='')
             self.csv_reader = csv.reader(x.replace('\0', '') for x in csv_pnt)
-
-            last_route = -1
-            total_content = []
             for i in self.csv_reader:
-                try:
-                    if(last_route == int(i[self.route_number])):
-                        total_content.append(i)
-                    elif(last_route < int(i[self.route_number])):
-                        self.csv_content.append(total_content)
-                        last_route = int(i[self.route_number])
-                        total_content = [i]
-                    else:
-                        continue
-                except:
-                    continue
+                self.csv_content.append(i)
         except:
             pass
 
@@ -354,13 +342,8 @@ class GPS_data():
                 pass
         return total_content
 
-    def get_content_by_route(self,route_num):
-        for i in self.csv_content:
-            for j in i:
-                if (j[self.route_number] != route_num):
-                    break
-                else:
-                    return i
+    def get_all_content(self):
+        return self.csv_content
 
     def compare_time(self,time_a,time_b):
         time_a_struct = datetime.strptime(time_a,"%Y-%m-%d, %H:%M:%S.%f")
@@ -371,4 +354,3 @@ class GPS_data():
 
         return time_a - time_b
           
-c = alignment(data_folder = "../data/0902/", imu_file_name = "imu_data.csv", gps_file_name = "gps_data.csv", wifi_file_name = "wifi_data.csv")
