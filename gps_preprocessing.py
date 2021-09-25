@@ -7,9 +7,9 @@ import csv
 import time
 
 class GNSSlogger_transfer():
-    def __init__(self,input_folder_path,output_folder_path,file_arr):
+    def __init__(self,file_pnt,input_folder_path,output_folder_path,file_arr):
         self.folder_path = output_folder_path
-        with open(output_folder_path+'gps_data.csv', 'a', newline='') as csv_pnt:
+        with open(output_folder_path+'gps_data.csv', file_pnt, newline='') as csv_pnt:
             pass
 
         for i in file_arr:
@@ -21,65 +21,17 @@ class GNSSlogger_transfer():
         f.close()
 
         rawlist = []
+        get_time = []
         for i in range(len(data)):
             if data[i].find('Raw') != -1 and data[i].find('# Raw')==-1 :
                 rawlist.append(i)
-
-        head = data[5].split(',')[1:]
-        head[-1] = head[-1][:head[-1].find('\n')]
-
-        df2 = pd.DataFrame(columns=head)
-        for j in range(len(rawlist)):
-            i = rawlist[j]
-            itime = data[rawlist[j]].split(',')[2]
-            #itime -> timestamp
-            if j == 0:
-                time_temp = 0
-                df = pd.DataFrame(columns=head)
-            ldata_f = []
-            ldata = data[i].split(',')[1:]
-            ldata[-1] = ldata[-1][:ldata[-1].find('\n')]
-            #print(ldata)
-            for m in ldata:
-                if m != '' and m!='C'and m!='A' and m!='P'and m!='I'and m!='Q':
-                    ldata_f.append(float(m))
-                else:
-                    ldata_f.append(m)
-            #print(j)
-            ldf = pd.DataFrame([ldata_f],columns=head)
-            
-            df = df.append(ldf,ignore_index=True)
-            
-            if i == rawlist[-1]:
-                df = pd.concat([df],keys=['t'+ str(time_temp )])
-                t_end = time_temp 
-                df = df.assign(allRxMills = (df.TimeNanos - df.FullBiasNanos)*1e-6)
-                df_g = pd.concat([df_g,df])
-                
-            elif rawlist[j+1] -i >1 or data[rawlist[j+1]].split(',')[2]!=itime:
-                df = pd.concat([df],keys=['t'+ str(time_temp )])
-                df = df.assign(allRxMills = (df.TimeNanos - df.FullBiasNanos)*1e-6)
-                if time_temp  == 0:
-                    df_g = pd.concat([df])
-                else:
-                    df_g = pd.concat([df_g,df])
-                time_temp  += 1
-                df = pd.DataFrame(columns=head)
-            
-        dd=df.sort_values(by=['Cn0DbHz'],ascending=False)
-        dd = dd.drop_duplicates('Svid')
-        dd = dd.reset_index()
+                get_time.append((float(data[i].split(',')[2]) - float(data[i].split(',')[5]))*1e-6)
 
         with open(self.folder_path+'gps_data.csv', 'a', newline='') as csv_pnt:
             csv_writer = csv.writer(csv_pnt)
             
-            for index, i in enumerate(df_g.allRxMills):
-                time_out = self.gps2utc(i)
-                time_out = time_out[0]
-                time_out[3] -= 7
-                if(time_out[3] < 0):
-                    time_out[2] -= 1
-                    time_out[3] += 24
+            for index, i in enumerate(get_time):
+                time_out = self.gps2utc(i)[0]
                 time_str = str(int(time_out[0]))+"-"+str(int(time_out[1]))+"-"+str(int(time_out[2]))+", "+str(int(time_out[3]))+":"+str(int(time_out[4]))+":"+str(round(time_out[5],3))
                 data[rawlist[index]] = "".join(data[rawlist[index]].split('\r\n'))
                 temp = [time_str,data[rawlist[index]]]
@@ -159,7 +111,7 @@ class GNSSlogger_transfer():
         
         time_temp[:,2] = days
         sinceMidnightSeconds = svtest % DAYSEC
-        time_temp[:,3] = np.floor(sinceMidnightSeconds/HOURSEC)
+        time_temp[:,3] = np.floor(sinceMidnightSeconds/HOURSEC) - 7
         lastHourSeconds = sinceMidnightSeconds % HOURSEC
         time_temp[:,4] = np.floor(lastHourSeconds/MINSEC)
         time_temp[:,5] = lastHourSeconds%MINSEC

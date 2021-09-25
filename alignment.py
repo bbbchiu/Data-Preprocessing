@@ -4,19 +4,12 @@ import time
 from datetime import datetime
 
 class alignment():
-    def __init__(self,data_folder,imu_file_name,wifi_file_name,gps_file_name,indoor_gps_file_name = None, outdoor_gps_file_name = None):
+    def __init__(self,data_folder,imu_file_name,wifi_file_name,gps_file_name):
         # declare objs and set files
         self.data_folder = data_folder
         self.imu_file_name = imu_file_name
         self.wifi_file_name = wifi_file_name
         self.gps_file_name = gps_file_name
-        self.indoor_gps_file_name = indoor_gps_file_name
-        self.outdoor_gps_file_name = outdoor_gps_file_name
-
-        if(self.indoor_gps_file_name != None):
-            self.indoor_gps_obj = GPS_data(self.data_folder+self.indoor_gps_file_name)
-        if(self.outdoor_gps_file_name != None):
-            self.outdoor_gps_obj = GPS_data(self.data_folder+self.outdoor_gps_file_name)
 
         self.wifi_obj = Wifi_data(self.data_folder+self.wifi_file_name)
         self.imu_obj = IMU_data(self.data_folder+self.imu_file_name)
@@ -50,7 +43,10 @@ class alignment():
         self.point_t_counter = 0
 
         with open(self.data_folder+'output.csv', 'w', newline='') as csv_pnt:
-            pass
+          self.csv_writer = csv.writer(csv_pnt)
+          self.csv_writer.writerow(["route num","step num","x","y","wifi data","gps data","imu data"])
+
+        self.gps_content = self.gps_obj.get_all_content()
 
         for index,single_time in enumerate(self.wifi_time):
             self.wifi_content = self.wifi_obj.get_content(index)
@@ -62,29 +58,14 @@ class alignment():
             if(int(self.wifi_route[index]) > self.last_route):
                 if(self.last_route != -1 and self.point_t_counter != 0):
                     self.trajectory_counter += 1
-                    #print("Trajectory: ",self.last_route)
-                    #print("point nums: ",self.point_t_counter)
-                    #print("Total trajectory: ",self.trajectory_counter)
-                    #print("Total point: ",self.point_counter)
-                    #print()
+                    print("Trajectory: ",self.last_route)
+                    print("point nums: ",self.point_t_counter)
+                    print("Total trajectory: ",self.trajectory_counter)
+                    print("Total point: ",self.point_counter)
+                    print()
 
                     self.point_t_counter = 1
-                    
-            if(self.indoor_gps_file_name != None):
-                self.indoor_gps_content = self.indoor_gps_obj.get_content_by_route(int(self.wifi_route[index]))
-                if(self.indoor_gps_content == None):
-                    continue
-            else:
-                self.indoor_gps_content = None
-
-            if(self.outdoor_gps_file_name != None):
-                self.outdoor_gps_content = self.outdoor_gps_obj.get_content_by_route(int(self.wifi_route[index]))
-                if(self.outdoor_gps_content == None):
-                    continue
-            else:
-                self.outdoor_gps_content = None
-
-            self.gps_content = self.gps_obj.get_all_content()
+                  
             self.imu_content = self.imu_obj.get_content_by_route(self.wifi_route[index])
             self.last_route = int(self.wifi_route[index])
 
@@ -97,91 +78,70 @@ class alignment():
             self.point_counter += 1
 
         self.trajectory_counter += 1
-        #print("Trajectory: ",self.last_route)
-        #print("point nums: ",self.point_t_counter)
-        #print("Total trajectory: ",self.trajectory_counter)
-        #print("Total point: ",self.point_counter)
-        #print()
+        print("Trajectory: ",self.last_route)
+        print("point nums: ",self.point_t_counter)
+        print("Total trajectory: ",self.trajectory_counter)
+        print("Total point: ",self.point_counter)
+        print()
         self.point_t_counter = 0
             
     def get_time_content(self,single_time):
         with open(self.data_folder+'output.csv', 'a', newline='') as csv_pnt:
             self.csv_writer = csv.writer(csv_pnt)
             self.write_arr = []
-            self.write_arr.append(["wifi data"])
-            self.write_arr.append(self.wifi_content)
             total_content = []
-            for i in self.gps_content:
+
+            total_content.append(str(self.wifi_content[0]))  # route num
+            total_content.append(str(self.point_t_counter))  # step num
+            total_content.append(str(self.wifi_content[1]))  # x
+            total_content.append(str(self.wifi_content[2]))  # y
+            total_content.append(str(self.wifi_content[3]))  # wifi data
+
+            # GPS
+            gps_str = ""
+            for index,i in enumerate(self.gps_content):
                 reply = self.compare_time(single_time,i[self.gps_obj.time_number])
                 if reply == None:
                     continue
                 elif ((reply > 0 and reply <= self.data_front_threshold) or (reply <= 0 and reply >= -self.data_back_threshold)):
-                    total_content.append(i)
+                    gps_str += i[1]
+                    self.gps_content.remove(i) # not allow overlap
+                elif ((reply <= 0 and reply < -self.data_back_threshold)):
+                  break
                 else:
                     pass
-            if(len(total_content) != 0):
-                self.write_arr.append(["gps data"])
-                for i in total_content:
-                    self.write_arr.append(i)
+
+            if (gps_str != ""):
+                total_content.append(gps_str)
             else:
                 #print("gps: ",single_time)
                 return -1
 
-            total_content = []
+            # IMU
+            mag_arr = [0,0,0]
+            cnt = 0
             for i in self.imu_content:
                 reply = self.compare_time(single_time,i[self.imu_obj.time_number])
                 if reply == None:
                     continue
                 elif ((reply > 0 and reply <= self.data_front_threshold) or (reply <= 0 and reply >= -self.data_back_threshold)):
-                    total_content.append(i)
+                    mag_arr[0] += float(i[9])
+                    mag_arr[1] += float(i[10])
+                    mag_arr[2] += float(i[11])
+                    cnt += 1
+                elif ((reply <= 0 and reply < -self.data_back_threshold)):
+                  break
                 else:
                     pass
-            if(len(total_content) != 0):
-                self.write_arr.append(["imu data"])
-                for i in total_content:
-                    self.write_arr.append(i)
+            if (cnt != 0):
+                mag_arr = [str(i/cnt) for i in mag_arr]
+                total_content.append(mag_arr)
             else:
                 #print("imu: ",single_time)
                 return -1
 
+            self.write_arr.append(total_content)
             total_content = []
-            #print(self.indoor_gps_file_name,self.indoor_gps_content)
-            if(self.indoor_gps_file_name != None and self.indoor_gps_content != None):
-                for i in self.indoor_gps_content:
-                    reply = self.compare_time(single_time,i[self.indoor_gps_obj.time_number])
-                    if reply == None:
-                        continue
-                    elif ((reply > 0 and reply <= self.data_front_threshold) or (reply <= 0 and reply >= -self.data_back_threshold)):
-                        total_content.append(i)
-                    else:
-                        pass
-                if(len(total_content) != 0):
-                    self.write_arr.append(["indoor gps data"])
-                    for i in total_content:
-                        self.write_arr.append(i)
-                else:
-                    #print("indoor gps: ",single_time)
-                    return -1
-
-            total_content = []
-            #print(self.outdoor_gps_file_name,self,outdoor_gps_content)
-            if(self.outdoor_gps_file_name != None and self.outdoor_gps_content != None):
-                for i in self.outdoor_gps_content:
-                    reply = self.compare_time(single_time,i[self.outdoor_gps_obj.time_number])
-                    if reply == None:
-                        continue
-                    elif ((reply > 0 and reply <= self.data_front_threshold) or (reply <= 0 and reply >= -self.data_back_threshold)):
-                        total_content.append(i)
-                    else:
-                        pass
-                if(len(total_content) != 0):
-                    self.write_arr.append(["outdoor gps data"])
-                    for i in total_content:
-                        self.write_arr.append(i)
-                else:
-                    #print("outdoor gps: ",single_time)
-                    return -1
-            self.write_arr.append(["finish"])
 
             for i in self.write_arr:
                 self.csv_writer.writerow(i)

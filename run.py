@@ -1,6 +1,5 @@
 from gps_preprocessing import GNSSlogger_transfer
 from alignment import alignment
-from preprocessing import preprocessing
 
 if __name__ == '__main__':
     print("\nStart GPS preprocessing~\n")
@@ -8,9 +7,6 @@ if __name__ == '__main__':
 
     print("Start Alignment~\n")
     c = alignment(data_folder = "../data/0913/", imu_file_name = "imu_data.csv", gps_file_name = "gps_data.csv", wifi_file_name = "wifi_data.csv")
-
-    print("Start Preprocessing~\n")
-    c = preprocessing(data_folder = "../data/0913/",input_file_name = "output.csv")
 
     print("Done~\n")
 
